@@ -1,0 +1,54 @@
+.editor-layout{
+  height:calc(100vh - 70px);
+
+  display:flex;
+}
+
+.canvas-area{
+  flex:1;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  background:#111827;
+}
+
+.image-preview{
+  width:700px;
+  height:500px;
+
+  background:#1F2937;
+
+  border:2px dashed #374151;
+
+  border-radius:20px;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  color:#9CA3AF;
+}
+
+.adjust-panel{
+  width:300px;
+
+  background:#1F2937;
+
+  border-left:1px solid #374151;
+
+  padding:20px;
+}
+
+.control{
+  margin-top:20px;
+
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.control input{
+  width:100%;
+}
