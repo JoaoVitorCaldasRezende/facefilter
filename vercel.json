@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd frontend && pnpm install && pnpm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "echo 'dependencies installed per buildCommand'"
+}
