@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUndo, onRedo, onNewPhoto, onExport, onToggleOriginal, splitView = false, onToggleSplitView }) {
+export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUndo, onRedo, onNewPhoto, onExport, splitView = false, onToggleSplitView }) {
   const location = useLocation();
 
   return (
@@ -48,10 +48,11 @@ export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUn
         </>
       )}
 
-      <nav className="ml-auto flex items-center gap-1.5">
+      <nav className="ml-auto flex items-center gap-1.5 min-w-0">
+        {/* Galeria — oculto no mobile para ganhar espaço */}
         <Link
           to="/galeria"
-          className={`px-3 h-7 flex items-center text-[9px] font-bold tracking-[0.15em] uppercase transition-all
+          className={`hidden sm:flex px-3 h-7 items-center text-[9px] font-bold tracking-[0.15em] uppercase transition-all
             ${location.pathname === '/galeria'
               ? 'text-accent border border-accent/30 bg-accent/5'
               : 'text-text-muted border border-transparent hover:text-text-secondary hover:border-border-light'
@@ -62,39 +63,65 @@ export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUn
 
         {mode === 'editing' && (
           <>
-            <button
-              onMouseDown={() => onToggleOriginal?.(true)}
-              onMouseUp={() => onToggleOriginal?.(false)}
-              onMouseLeave={() => onToggleOriginal?.(false)}
-              title="Segurar para comparar com original"
-              className="px-3 h-7 text-[9px] font-bold tracking-[0.15em] uppercase text-text-muted border border-border-main hover:border-border-light hover:text-text-secondary transition-all select-none"
-            >
-              Y
-            </button>
+
+            {/* Split — visível no mobile e desktop */}
             <button
               onClick={onToggleSplitView}
               title="Comparação lado a lado"
-              className={`px-3 h-7 text-[9px] font-bold tracking-[0.15em] uppercase border transition-all select-none
+              className={`flex px-3 h-7 items-center justify-center border transition-all select-none
                 ${splitView
                   ? 'border-accent text-accent bg-accent/5'
                   : 'border-border-main text-text-muted hover:border-border-light hover:text-text-secondary'
                 }`}
             >
-              ◫
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="1.5" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+              </svg>
             </button>
+
+            {/* Nova foto — apenas desktop */}
             <button
               onClick={onNewPhoto}
-              className="px-3 h-7 text-[9px] font-bold tracking-[0.15em] uppercase text-text-muted border border-border-main hover:border-border-light hover:text-text-secondary transition-all"
+              title="Nova foto"
+              className="hidden sm:block h-7 px-3 text-[9px] font-bold tracking-[0.15em] uppercase text-text-muted border border-border-main hover:border-border-light hover:text-text-secondary transition-all"
             >
               Nova foto
             </button>
+
+            {/* Exportar — sempre visível */}
             <button
               onClick={onExport}
-              className="px-4 h-7 text-[9px] font-bold tracking-[0.15em] uppercase bg-accent text-bg-base hover:opacity-90 transition-all shadow-[0_0_16px_rgba(45,212,191,0.2)]"
+              className="px-3 sm:px-4 h-7 text-[9px] font-bold tracking-[0.15em] uppercase bg-accent text-bg-base hover:opacity-90 transition-all shadow-[0_0_16px_rgba(45,212,191,0.2)] flex-shrink-0"
             >
-              Exportar
+              Baixar
             </button>
           </>
+        )}
+
+        {/* Galeria como ícone no mobile (quando editando) */}
+        {mode === 'editing' && (
+          <Link
+            to="/galeria"
+            className="sm:hidden flex items-center justify-center w-7 h-7 text-text-muted border border-border-main hover:border-border-light transition-all"
+            title="Galeria"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="1.5"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+        )}
+
+        {/* Galeria no idle mobile */}
+        {mode !== 'editing' && (
+          <Link
+            to="/galeria"
+            className="sm:hidden px-3 h-7 flex items-center text-[9px] font-bold tracking-[0.15em] uppercase transition-all text-text-muted border border-transparent hover:text-text-secondary hover:border-border-light"
+          >
+            Galeria
+          </Link>
         )}
       </nav>
     </header>

@@ -4,7 +4,6 @@ import { useEditor } from '../../hooks/useEditor';
 import { useExport } from '../../hooks/useExport';
 import { useGallery } from '../../hooks/useGallery';
 import { usePresets } from '../../hooks/usePresets';
-import { DEFAULT_ADJUSTMENTS } from '../../utils/buildFilterString';
 import { buildCurveLUT } from '../../utils/buildCurveLUT';
 import TopBar from '../../components/TopBar/TopBar';
 import DropZone from '../../components/DropZone/DropZone';
@@ -12,6 +11,8 @@ import EditorCanvas from '../../components/EditorCanvas/EditorCanvas';
 import AdjustmentsPanel from '../../components/AdjustmentsPanel/AdjustmentsPanel';
 import ExportModal from '../../components/ExportModal/ExportModal';
 import ExportingOverlay from '../../components/ExportModal/ExportingOverlay';
+import BottomSheet from '../../components/BottomSheet/BottomSheet';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 export default function Editor() {
   const location = useLocation();
@@ -20,9 +21,9 @@ export default function Editor() {
   const { savePhoto, getPhotoById } = useGallery();
   const { presets, savePreset, deletePreset } = usePresets();
   const [cropAspectRatio, setCropAspectRatio] = useState(null);
-  const [showOriginal, setShowOriginal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [splitView, setSplitView] = useState(false);
+  const isMobile = useIsMobile();
   const [exportingFormat, setExportingFormat] = useState(null); // null = not exporting
 
   // Derive curveLUT from curvePoints — not stored in history, computed on-demand
@@ -35,8 +36,8 @@ export default function Editor() {
   }, [editor.adjustments.curvePoints]);
 
   const activeAdjustments = useMemo(
-    () => (showOriginal ? DEFAULT_ADJUSTMENTS : { ...editor.adjustments, curveLUT }),
-    [showOriginal, editor.adjustments, curveLUT]
+    () => ({ ...editor.adjustments, curveLUT }),
+    [editor.adjustments, curveLUT]
   );
 
   useEffect(() => {
@@ -104,14 +105,45 @@ export default function Editor() {
         onRedo={editor.redo}
         onNewPhoto={editor.clearImage}
         onExport={handleExport}
-        onToggleOriginal={setShowOriginal}
         splitView={splitView}
         onToggleSplitView={() => setSplitView(v => !v)}
       />
 
       {!isEditing ? (
         <DropZone onFile={editor.loadImage} />
+      ) : isMobile ? (
+        /* ── Mobile: canvas acima do BottomSheet ── */
+        <div className="flex-1 relative overflow-hidden">
+          {/* Canvas ocupa apenas a área acima do sheet aberto (58vh) */}
+          <div className="absolute top-0 left-0 right-0 flex flex-col" style={{ bottom: '58vh' }}>
+            <EditorCanvas
+              imageURL={editor.imageURL}
+              adjustments={activeAdjustments}
+              mode={editor.mode}
+              cropBox={editor.cropBox}
+              cropAspectRatio={cropAspectRatio}
+              onConfirmCrop={editor.confirmCrop}
+              onCancelCrop={editor.cancelCrop}
+              splitView={splitView}
+            />
+          </div>
+          <BottomSheet>
+            <AdjustmentsPanel
+              adjustments={activeAdjustments}
+              onAdjust={editor.applyAdjustment}
+              onReset={editor.reset}
+              onStartCrop={handleStartCrop}
+              imageURL={editor.imageURL}
+              presets={presets}
+              onSavePreset={(name) => savePreset(name, editor.adjustments)}
+              onDeletePreset={deletePreset}
+              onApplyPreset={handleApplyPreset}
+              onCurveChange={(pts) => editor.applyAdjustment('curvePoints', pts)}
+            />
+          </BottomSheet>
+        </div>
       ) : (
+        /* ── Desktop: side-by-side ── */
         <div className="flex flex-1 overflow-hidden">
           <EditorCanvas
             imageURL={editor.imageURL}

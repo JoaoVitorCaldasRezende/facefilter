@@ -15,7 +15,7 @@ export default function ExportModal({ onConfirm, onCancel }) {
         {/* Header */}
         <div className="px-5 py-4 border-b border-border-main">
           <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-text-primary">
-            Exportar Foto
+            Baixar Foto
           </h2>
         </div>
 
@@ -98,7 +98,7 @@ export default function ExportModal({ onConfirm, onCancel }) {
             onClick={() => onConfirm(format, quality)}
             className="flex-1 py-3 text-[9px] font-bold tracking-[0.15em] uppercase bg-accent text-bg-base hover:opacity-90 transition-all"
           >
-            Exportar
+            Baixar
           </button>
         </div>
       </div>

@@ -1,12 +1,12 @@
 import { useRenderer } from '../../hooks/useRenderer';
 
 export default function PreviewCanvas({ imageURL, adjustments, cropBox, rotation = 0, flipH = false, flipV = false }) {
-  const { canvasRef, naturalSizeRef } = useRenderer(imageURL, adjustments);
+  const { canvasRef, naturalSize } = useRenderer(imageURL, adjustments);
 
   // Clip-path for crop preview using percentage coords
   let clipPath;
-  if (cropBox && naturalSizeRef.current) {
-    const { w: nw, h: nh } = naturalSizeRef.current;
+  if (cropBox && naturalSize) {
+    const { w: nw, h: nh } = naturalSize;
     const top    = (cropBox.y / nh * 100).toFixed(3);
     const right  = ((nw - cropBox.x - cropBox.width)  / nw * 100).toFixed(3);
     const bottom = ((nh - cropBox.y - cropBox.height) / nh * 100).toFixed(3);
@@ -25,7 +25,7 @@ export default function PreviewCanvas({ imageURL, adjustments, cropBox, rotation
       ref={canvasRef}
       style={{
         maxWidth: '100%',
-        maxHeight: 'calc(100vh - 60px)',
+        maxHeight: '100%',
         display: 'block',
         imageRendering: 'auto',
         ...(clipPath ? { clipPath } : {}),

@@ -97,6 +97,64 @@ export default function EditorCanvas({
     };
   }, [handleMouseMove, handleMouseUp]);
 
+  // ── Pinch zoom + single-touch pan ────────────────────────────
+  const lastPinchDist = useRef(null);
+
+  function handleTouchStart(e) {
+    if (mode === 'cropping') return;
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const [t1, t2] = e.touches;
+      lastPinchDist.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    } else if (e.touches.length === 1 && zoomRef.current > 1.05) {
+      e.preventDefault();
+      setDragging(true);
+      dragRef.current = {
+        startX: e.touches[0].clientX, startY: e.touches[0].clientY,
+        startPanX: panRef.current.x,  startPanY: panRef.current.y,
+      };
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (mode === 'cropping') return;
+    if (e.touches.length === 2 && lastPinchDist.current !== null) {
+      e.preventDefault();
+      const [t1, t2] = e.touches;
+      const newDist  = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const factor   = newDist / lastPinchDist.current;
+      const prevZoom = zoomRef.current;
+      const nextZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prevZoom * factor));
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const mx    = (t1.clientX + t2.clientX) / 2;
+        const my    = (t1.clientY + t2.clientY) / 2;
+        const cx    = mx - rect.left  - rect.width  / 2;
+        const cy    = my - rect.top   - rect.height / 2;
+        const scale = nextZoom / prevZoom;
+        setZoom(nextZoom);
+        setPan(p => ({ x: cx - (cx - p.x) * scale, y: cy - (cy - p.y) * scale }));
+      }
+      lastPinchDist.current = newDist;
+    } else if (e.touches.length === 1 && dragRef.current) {
+      e.preventDefault();
+      const { startX, startY, startPanX, startPanY } = dragRef.current;
+      setPan({
+        x: startPanX + (e.touches[0].clientX - startX),
+        y: startPanY + (e.touches[0].clientY - startY),
+      });
+    }
+  }
+
+  function handleTouchEnd(e) {
+    if (e.touches.length < 2) lastPinchDist.current = null;
+    if (e.touches.length === 0) {
+      dragRef.current = null;
+      setDragging(false);
+    }
+  }
+
   // ── Double-click: cycle through snap zoom levels ──────────────
   const handleDblClick = useCallback(() => {
     const current = zoomRef.current;
@@ -126,9 +184,12 @@ export default function EditorCanvas({
     <div
       ref={containerRef}
       className="flex-1 bg-slate-950 overflow-hidden relative select-none"
-      style={{ cursor: isDragging ? 'grabbing' : isPannable ? 'grab' : 'default' }}
+      style={{ cursor: isDragging ? 'grabbing' : isPannable ? 'grab' : 'default', touchAction: 'none' }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDblClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Transformed content layer */}
       <div

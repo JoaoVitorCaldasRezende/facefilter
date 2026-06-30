@@ -77,7 +77,7 @@ export default function AdjustmentsPanel({ adjustments, onAdjust, onReset, onSta
   const [tab, setTab] = useState('luz');
 
   return (
-    <aside className="w-[260px] flex-shrink-0 bg-bg-surface border-l border-border-main flex flex-col overflow-hidden">
+    <aside className="w-full md:w-[260px] flex-shrink-0 bg-bg-surface md:border-l border-border-main flex flex-col overflow-hidden h-full">
       {imageURL && (
         <div className="border-b border-border-main px-2 py-1.5 bg-bg-base/50">
           <Histogram imageURL={imageURL} adjustments={adjustments} />

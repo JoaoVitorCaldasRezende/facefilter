@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { applyPipeline } from '../utils/renderPipeline';
 
 const MAX_PREVIEW_PX = 1440;
@@ -18,12 +18,14 @@ function createScaledSource(img) {
 export function useRenderer(imageURL, adjustments) {
   const canvasRef      = useRef(null);
   const sourceRef      = useRef(null);   // { imageData, scale }
-  const naturalSizeRef = useRef(null);   // { w, h } of original
+  const [naturalSize, setNaturalSize] = useState(null);   // { w, h } of original
   const rafRef         = useRef(null);
   const adjustmentsRef = useRef(adjustments);
 
   // Always reflects latest adjustments inside the RAF callback
-  adjustmentsRef.current = adjustments;
+  useEffect(() => {
+    adjustmentsRef.current = adjustments;
+  }, [adjustments]);
 
   const render = useCallback(() => {
     if (!canvasRef.current || !sourceRef.current) return;
@@ -45,8 +47,8 @@ export function useRenderer(imageURL, adjustments) {
   // Reload source when imageURL changes
   useEffect(() => {
     if (!imageURL) {
-      sourceRef.current      = null;
-      naturalSizeRef.current = null;
+      sourceRef.current = null;
+      Promise.resolve().then(() => setNaturalSize(null));
       if (canvasRef.current) { canvasRef.current.width = 0; canvasRef.current.height = 0; }
       return;
     }
@@ -55,7 +57,7 @@ export function useRenderer(imageURL, adjustments) {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       if (cancelled) return;
-      naturalSizeRef.current = { w: img.naturalWidth, h: img.naturalHeight };
+      setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
       sourceRef.current      = createScaledSource(img);
       render();
     };
@@ -66,5 +68,5 @@ export function useRenderer(imageURL, adjustments) {
   // Re-render on adjustment changes
   useEffect(() => { render(); }, [adjustments, render]);
 
-  return { canvasRef, naturalSizeRef };
+  return { canvasRef, naturalSize };
 }
