@@ -2,7 +2,6 @@ import { useState } from 'react';
 import SliderControl from '../SliderControl/SliderControl';
 import HSLMixer from '../HSLMixer/HSLMixer';
 import ColorGrading from '../ColorGrading/ColorGrading';
-import Histogram from '../Histogram/Histogram';
 import ToneCurve from '../ToneCurve/ToneCurve';
 
 const LUZ_SLIDERS = [
@@ -73,17 +72,11 @@ function SliderGroup({ sliders, adjustments, onAdjust }) {
   );
 }
 
-export default function AdjustmentsPanel({ adjustments, onAdjust, onReset, onStartCrop, imageURL, presets, onSavePreset, onDeletePreset, onApplyPreset, onCurveChange }) {
+export default function AdjustmentsPanel({ adjustments, onAdjust, onReset, onStartCrop, presets, onSavePreset, onDeletePreset, onApplyPreset, onCurveChange }) {
   const [tab, setTab] = useState('luz');
 
   return (
     <aside className="w-full md:w-[260px] flex-shrink-0 bg-bg-surface md:border-l border-border-main flex flex-col overflow-hidden h-full">
-      {imageURL && (
-        <div className="border-b border-border-main px-2 py-1.5 bg-bg-base/50">
-          <Histogram imageURL={imageURL} adjustments={adjustments} />
-        </div>
-      )}
-
       {/* Tab bar */}
       <div className="flex border-b border-border-main flex-shrink-0 overflow-x-auto">
         {TABS.map(t => (

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUndo, onRedo, onNewPhoto, onExport, splitView = false, onToggleSplitView }) {
+export default function TopBar({ mode = 'idle', fileName, onNewPhoto, onExport, splitView = false, onToggleSplitView }) {
   const location = useLocation();
 
   return (
@@ -19,32 +19,12 @@ export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUn
         </span>
       </Link>
 
-      {mode === 'editing' && (
+      {mode === 'editing' && fileName && (
         <>
           <div className="h-3 w-px bg-border-light mx-0.5" />
-          {fileName && (
-            <span className="text-[9px] text-text-muted truncate max-w-[180px] hidden sm:block tracking-wide italic">
-              {fileName}
-            </span>
-          )}
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              title="Desfazer"
-              className="w-7 h-7 flex items-center justify-center text-[11px] border border-border-main text-text-muted hover:border-accent/40 hover:text-accent disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-            >
-              ↩
-            </button>
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              title="Refazer"
-              className="w-7 h-7 flex items-center justify-center text-[11px] border border-border-main text-text-muted hover:border-accent/40 hover:text-accent disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-            >
-              ↪
-            </button>
-          </div>
+          <span className="text-[9px] text-text-muted truncate max-w-[180px] hidden sm:block tracking-wide italic">
+            {fileName}
+          </span>
         </>
       )}
 
@@ -89,6 +69,19 @@ export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUn
               Nova foto
             </button>
 
+            {/* Galeria como ícone no mobile (quando editando) */}
+            <Link
+              to="/galeria"
+              className="sm:hidden flex items-center justify-center w-7 h-7 text-text-muted border border-border-main hover:border-border-light transition-all"
+              title="Galeria"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="1.5"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+
             {/* Exportar — sempre visível */}
             <button
               onClick={onExport}
@@ -97,21 +90,6 @@ export default function TopBar({ mode = 'idle', fileName, canUndo, canRedo, onUn
               Baixar
             </button>
           </>
-        )}
-
-        {/* Galeria como ícone no mobile (quando editando) */}
-        {mode === 'editing' && (
-          <Link
-            to="/galeria"
-            className="sm:hidden flex items-center justify-center w-7 h-7 text-text-muted border border-border-main hover:border-border-light transition-all"
-            title="Galeria"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="1.5"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
         )}
 
         {/* Galeria no idle mobile */}

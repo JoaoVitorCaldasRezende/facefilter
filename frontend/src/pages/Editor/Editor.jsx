@@ -24,6 +24,7 @@ export default function Editor() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [splitView, setSplitView] = useState(false);
   const isMobile = useIsMobile();
+  const [isBottomSheetOpen, setBottomSheetOpen] = useState(true);
   const [exportingFormat, setExportingFormat] = useState(null); // null = not exporting
 
   // Derive curveLUT from curvePoints — not stored in history, computed on-demand
@@ -99,10 +100,6 @@ export default function Editor() {
       <TopBar
         mode={isEditing ? 'editing' : 'idle'}
         fileName={editor.imageFile?.name}
-        canUndo={editor.canUndo}
-        canRedo={editor.canRedo}
-        onUndo={editor.undo}
-        onRedo={editor.redo}
         onNewPhoto={editor.clearImage}
         onExport={handleExport}
         splitView={splitView}
@@ -114,8 +111,14 @@ export default function Editor() {
       ) : isMobile ? (
         /* ── Mobile: canvas acima do BottomSheet ── */
         <div className="flex-1 relative overflow-hidden">
-          {/* Canvas ocupa apenas a área acima do sheet aberto (58vh) */}
-          <div className="absolute top-0 left-0 right-0 flex flex-col" style={{ bottom: '58vh' }}>
+          {/* Canvas ocupa apenas a área acima do sheet aberto (58vh ou 48px) */}
+          <div
+            className="absolute top-0 left-0 right-0 flex flex-col"
+            style={{
+              bottom: isBottomSheetOpen ? '58vh' : '48px',
+              transition: 'bottom 0.28s cubic-bezier(0.32, 0.72, 0, 1)'
+            }}
+          >
             <EditorCanvas
               imageURL={editor.imageURL}
               adjustments={activeAdjustments}
@@ -127,13 +130,12 @@ export default function Editor() {
               splitView={splitView}
             />
           </div>
-          <BottomSheet>
+          <BottomSheet isOpen={isBottomSheetOpen} setIsOpen={setBottomSheetOpen}>
             <AdjustmentsPanel
               adjustments={activeAdjustments}
               onAdjust={editor.applyAdjustment}
               onReset={editor.reset}
               onStartCrop={handleStartCrop}
-              imageURL={editor.imageURL}
               presets={presets}
               onSavePreset={(name) => savePreset(name, editor.adjustments)}
               onDeletePreset={deletePreset}
@@ -160,7 +162,6 @@ export default function Editor() {
             onAdjust={editor.applyAdjustment}
             onReset={editor.reset}
             onStartCrop={handleStartCrop}
-            imageURL={editor.imageURL}
             presets={presets}
             onSavePreset={(name) => savePreset(name, editor.adjustments)}
             onDeletePreset={deletePreset}

@@ -9,14 +9,53 @@ function sortPoints(points) {
 function pointsToSvgPath(points) {
   if (points.length < 2) return '';
   const sorted = sortPoints(points);
-  const toSvg = ([x, y]) => [x * SIZE / 255, SIZE - y * SIZE / 255];
+  
+  // Convert points to SVG coordinates
+  const svgPoints = sorted.map(([x, y]) => [
+    (x * SIZE) / 255,
+    SIZE - (y * SIZE) / 255
+  ]);
 
-  let d = `M ${toSvg(sorted[0]).join(' ')}`;
-  for (let i = 1; i < sorted.length; i++) {
-    const [x1, y1] = toSvg(sorted[i - 1]);
-    const [x2, y2] = toSvg(sorted[i]);
-    const cpx = (x2 - x1) * 0.4;
-    d += ` C ${x1 + cpx} ${y1}, ${x2 - cpx} ${y2}, ${x2} ${y2}`;
+  const k = svgPoints.length - 1;
+  const slopes = [];
+  
+  // Calculate slopes/tangents at each control point
+  for (let i = 0; i <= k; i++) {
+    if (i === 0) {
+      const dx = svgPoints[1][0] - svgPoints[0][0];
+      const dy = svgPoints[1][1] - svgPoints[0][1];
+      slopes.push(dx === 0 ? 0 : dy / dx);
+    } else if (i === k) {
+      const dx = svgPoints[k][0] - svgPoints[k - 1][0];
+      const dy = svgPoints[k][1] - svgPoints[k - 1][1];
+      slopes.push(dx === 0 ? 0 : dy / dx);
+    } else {
+      const dxL = svgPoints[i][0] - svgPoints[i - 1][0];
+      const dyL = svgPoints[i][1] - svgPoints[i - 1][1];
+      const slopeL = dxL === 0 ? 0 : dyL / dxL;
+
+      const dxR = svgPoints[i + 1][0] - svgPoints[i][0];
+      const dyR = svgPoints[i + 1][1] - svgPoints[i][1];
+      const slopeR = dxR === 0 ? 0 : dyR / dxR;
+
+      slopes.push((slopeL + slopeR) / 2);
+    }
+  }
+
+  let d = `M ${svgPoints[0].join(' ')}`;
+  for (let i = 0; i < k; i++) {
+    const [x1, y1] = svgPoints[i];
+    const [x2, y2] = svgPoints[i + 1];
+    const dx = x2 - x1;
+    const s_i = slopes[i];
+    const s_next = slopes[i + 1];
+
+    const cpx1 = x1 + dx / 3;
+    const cpy1 = y1 + s_i * (dx / 3);
+    const cpx2 = x2 - dx / 3;
+    const cpy2 = y2 - s_next * (dx / 3);
+
+    d += ` C ${cpx1.toFixed(3)} ${cpy1.toFixed(3)}, ${cpx2.toFixed(3)} ${cpy2.toFixed(3)}, ${x2.toFixed(3)} ${y2.toFixed(3)}`;
   }
   return d;
 }
@@ -24,6 +63,7 @@ function pointsToSvgPath(points) {
 export default function ToneCurve({ curvePoints, onChange }) {
   const svgRef = useRef(null);
   const draggingRef = useRef(null); // { index, startX, startY, startPoint }
+  const wasDraggingRef = useRef(false);
   const [, forceUpdate] = useState(0);
 
   const toSvgCoords = useCallback((e) => {
@@ -33,8 +73,9 @@ export default function ToneCurve({ curvePoints, onChange }) {
     return [Math.round(x * 255 / SIZE), Math.round((SIZE - y) * 255 / SIZE)];
   }, []);
 
-  const onMouseMove = useCallback((e) => {
+  const onPointerMove = useCallback((e) => {
     if (!draggingRef.current) return;
+    wasDraggingRef.current = true;
     const { index } = draggingRef.current;
     const [nx, ny] = toSvgCoords(e);
     const newPoints = [...curvePoints];
@@ -45,21 +86,26 @@ export default function ToneCurve({ curvePoints, onChange }) {
     onChange(newPoints);
   }, [curvePoints, onChange, toSvgCoords]);
 
-  const onMouseUp = useCallback(() => {
+  const onPointerUp = useCallback(() => {
     draggingRef.current = null;
     forceUpdate(n => n + 1);
   }, []);
 
   useEffect(() => {
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup',   onPointerUp);
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup',   onPointerUp);
     };
-  }, [onMouseMove, onMouseUp]);
+  }, [onPointerMove, onPointerUp]);
 
   function handleSvgClick(e) {
+    if (wasDraggingRef.current) {
+      // Consume the drag release click
+      wasDraggingRef.current = false;
+      return;
+    }
     if (draggingRef.current) return;
     const [nx, ny] = toSvgCoords(e);
     // Don't add if too close to existing point
@@ -68,10 +114,12 @@ export default function ToneCurve({ curvePoints, onChange }) {
     onChange([...curvePoints, [nx, ny]]);
   }
 
-  function handlePointMouseDown(e, index) {
+  function handlePointPointerDown(e, index) {
     e.preventDefault();
     e.stopPropagation();
     draggingRef.current = { index };
+    wasDraggingRef.current = false;
+    e.target.setPointerCapture(e.pointerId);
   }
 
   function handlePointRightClick(e, index) {
@@ -88,7 +136,7 @@ export default function ToneCurve({ curvePoints, onChange }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[9px] text-text-muted tracking-wide leading-relaxed">
-        Clique para adicionar ponto · Clique direito para remover
+        Clique para adicionar ponto · Clique direito (ou pressione e segure no celular) para remover
       </p>
 
       <div className="border border-border-main bg-bg-base p-1">
@@ -96,7 +144,7 @@ export default function ToneCurve({ curvePoints, onChange }) {
           ref={svgRef}
           viewBox={`0 0 ${SIZE} ${SIZE}`}
           className="w-full aspect-square cursor-crosshair select-none"
-          onMouseLeave={() => { draggingRef.current = null; }}
+          style={{ touchAction: 'none' }}
           onClick={handleSvgClick}
         >
           {/* Grid lines */}
@@ -123,12 +171,12 @@ export default function ToneCurve({ curvePoints, onChange }) {
                 key={`${pt[0]}-${pt[1]}-${i}`}
                 cx={pt[0] * SIZE / 255}
                 cy={SIZE - pt[1] * SIZE / 255}
-                r="5"
+                r="7"
                 fill="#090910"
                 stroke="#2DD4BF"
                 strokeWidth="1.5"
-                style={{ cursor: 'grab' }}
-                onMouseDown={(e) => handlePointMouseDown(e, origIdx)}
+                style={{ cursor: 'grab', touchAction: 'none' }}
+                onPointerDown={(e) => handlePointPointerDown(e, origIdx)}
                 onContextMenu={(e) => handlePointRightClick(e, origIdx)}
               />
             );

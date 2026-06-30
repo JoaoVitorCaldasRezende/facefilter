@@ -61,10 +61,10 @@ export default function EditorCanvas({
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
-  // ── Pan (drag when zoomed in, or middle-click) ────────────────
+  // ── Pan (drag when zoomed in, middle-click, or left-click) ──
   const handleMouseDown = useCallback((e) => {
     if (mode === 'cropping') return; // CropOverlay handles its own drag
-    const isPanGesture = e.button === 1 || (e.button === 0 && zoomRef.current > 1);
+    const isPanGesture = e.button === 1 || e.button === 0;
     if (!isPanGesture) return;
     e.preventDefault();
     setDragging(true);
@@ -106,7 +106,7 @@ export default function EditorCanvas({
       e.preventDefault();
       const [t1, t2] = e.touches;
       lastPinchDist.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    } else if (e.touches.length === 1 && zoomRef.current > 1.05) {
+    } else if (e.touches.length === 1) {
       e.preventDefault();
       setDragging(true);
       dragRef.current = {
@@ -170,21 +170,17 @@ export default function EditorCanvas({
     setPan({ x: 0, y: 0 });
   }, []);
 
-  // ── Split view ────────────────────────────────────────────────
-  if (splitView && mode !== 'cropping') {
-    return (
-      <SplitView imageURL={imageURL} adjustments={adjustments} cropBox={cropBox} />
-    );
-  }
-
   const zoomPercent = Math.round(zoom * 100);
-  const isPannable  = zoom > 1.05;
+  const isPannable  = true;
 
   return (
     <div
       ref={containerRef}
       className="flex-1 bg-slate-950 overflow-hidden relative select-none"
-      style={{ cursor: isDragging ? 'grabbing' : isPannable ? 'grab' : 'default', touchAction: 'none' }}
+      style={{
+        cursor: isDragging ? 'grabbing' : isPannable ? 'grab' : 'default',
+        touchAction: 'none',
+      }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDblClick}
       onTouchStart={handleTouchStart}
@@ -210,15 +206,18 @@ export default function EditorCanvas({
               style={{ maxWidth: '100%', maxHeight: 'calc(100vh - 60px)', display: 'block' }}
             />
           )}
-
-          <PreviewCanvas
-            imageURL={imageURL}
-            adjustments={adjustments}
-            cropBox={mode !== 'cropping' ? cropBox : null}
-            rotation={adjustments.rotation ?? 0}
-            flipH={adjustments.flipH ?? false}
-            flipV={adjustments.flipV ?? false}
-          />
+          {splitView && mode !== 'cropping' ? (
+            <SplitView imageURL={imageURL} adjustments={adjustments} cropBox={cropBox} />
+          ) : (
+            <PreviewCanvas
+              imageURL={imageURL}
+              adjustments={adjustments}
+              cropBox={mode !== 'cropping' ? cropBox : null}
+              rotation={adjustments.rotation ?? 0}
+              flipH={adjustments.flipH ?? false}
+              flipV={adjustments.flipV ?? false}
+            />
+          )}
 
           {mode === 'cropping' && (
             <CropOverlay

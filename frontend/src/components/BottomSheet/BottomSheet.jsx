@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 
 const SNAP = { closed: '48px', open: '58vh' };
 
-export default function BottomSheet({ children }) {
-  const [isOpen, setIsOpen] = useState(true);
+export default function BottomSheet({ children, isOpen, setIsOpen }) {
   const touchStartY = useRef(null);
 
   function onTouchStart(e) {
